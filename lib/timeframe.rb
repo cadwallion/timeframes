@@ -17,7 +17,7 @@ class Timeframe
   
   def to_s
     if @stop - @start < 24.hours
-      @start.strftime("%m/%d/%Y %I:%M:%S %p") + " - " + @stop.strftime("%I:%m:%S %p")
+      @start.strftime("%m/%d/%Y %I:%M:%S %p") + " - " + @stop.strftime("%I:%M:%S %p")
     else
       @start.strftime("%m/%d/%Y %I:%M:%S %p") + " - " + @stop.strftime("%m/%d/%Y %I:%M:%S %p")
     end

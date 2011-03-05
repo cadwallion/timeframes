@@ -1,9 +1,13 @@
+require 'logger'
+
 class TimeframeSeries
   attr_reader :timeframes
   
   def initialize(timeframes = [])
     @timeframes = timeframes
     @timeframes.sort!
+    
+    @logger = Logger.new(File.expand_path(File.dirname(__FILE__) + "/../log/debug.log"))
   end
   
   def <<(other)
@@ -32,10 +36,12 @@ class TimeframeSeries
     if check_sequential
       sequential_output
     elsif pattern = check_common_weekday
+      @logger.debug("pattern: #{pattern}")
       common_weekday_output(pattern)
     elsif check_common_monthday
       # stub
     else
+      @logger.debug(pattern)
       default_output
     end
   end
@@ -43,28 +49,48 @@ class TimeframeSeries
   private
   
   def check_common_weekday
+    @logger.debug("timeframes: #{@timeframes}")
     weekdays = @timeframes.map { |t| t.start.wday }
-    scan_occurrences = weekdays.join("").scan(/#{weekdays.first}/).size
+    scan = weekdays.join("").scan(/#{weekdays.first}/)
+    scan_occurrences = scan.size
+    @logger.debug "scan: #{scan} | scan_occurrences: #{scan_occurrences}"
     if scan_occurrences > 1
       result_count = weekdays.join("").split(/(0\d{0,})\1{#{scan_occurrences-1},}/)
+      @logger.debug("result_count: #{result_count}")
       if result_count.size  == 1
         weekday_patterns = result_count[0].split("")
+        @logger.debug("weekday_patterns: #{weekday_patterns}")
         total_distances = {}
-        scan_occurrences.times do |group|
-          occurrence_distances = []
-          (weekday_patterns.size).times do |day|
-            total_distances[day] ||= []
-            distance = @timeframes[day+(group+weekday_patterns.size)-1] - @timeframes[(day*group)-1]
-            if @timeframes[(group*i)-1] + distance.days == @timeframes[(group*i)] # checking times, basically
-              total_distances[day] << distance
+        dates_per_group = weekday_patterns.first.size
+        @logger.debug("dates_per_group: #{dates_per_group}")
+        # offset per group.  pattern_group 0 with dates_per_group 4 means comparing 0-3 to 4-7, 
+        # then 4-7 to 8-11, through scan_occurrences times.
+        # pattern_group * dates_per_group is the base index
+        # (pattern_group + 1) * dates_per_group is the comparison index
+        # Do not need to compare the last pattern to anything, so we decrement by 1.
+        (scan_occurrences - 1).times do |pattern_group| 
+          @logger.debug("pattern_group: #{pattern_group}")
+          dates_per_group.times do |date_within_group|
+            @logger.debug("date_within_group: #{date_within_group}")
+            base_index = (pattern_group * dates_per_group) + date_within_group
+            comparison_index = ((pattern_group + 1) * dates_per_group) + date_within_group
+            @logger.debug("base_index: #{base_index} | base_date: #{@timeframes[base_index].start}")
+            @logger.debug("comparison_index: #{comparison_index} | comparison_date: #{@timeframes[comparison_index].start}")
+            distance = @timeframes[comparison_index].start - @timeframes[base_index].start
+            @logger.debug("distance: #{distance} | base_date + distance: #{@timeframes[base_index].start + distance}")
+            if (@timeframes[base_index].start + distance) == @timeframes[comparison_index].start
+              total_distances[date_within_group] ||= []
+              total_distances[date_within_group] << distance
             else
               return false
             end
           end
         end
+
+        @logger.debug("Total Distances: #{total_distances}")
         total_distances.each do |day, distances|
           if distances.uniq.size == 1
-            total_distances[day] = distances
+            total_distances[day] = distances.first
           else
             return false
           end
@@ -100,33 +126,32 @@ class TimeframeSeries
   end
   
   def common_weekday_output(pattern)
-    @timeframes[1..(pattern.size-1)].each do |t|
-      if !same_time?(t.start, @timeframes[0].start) && !same_time?(t.stop, @timeframes[0].stop)
-        output = ""
-        counter = 0
-        pattern.each do |weekday|
-          case weekday
-          when 7
-            qualifier = "Every %A"
-          when 14
-            qualifier = "Every other %A"
-          else
-            # 1st & 3rd Tuesday
-            nth_days = @timeframes.map { |n| nth_dayname_of_month(n.start) }
-            groups = (@timeframes.size / pattern.size)
-            if groups > 2
-              default_output
-            else
-              qualifier = "#{nth_days[0]} and #{nth_days[(groups*1)+1]} %A"
-            end
-          end
-          output << @timeframes[counter].strftime("#{qualifier}")
-        end
+    output = ""
+    counter = 0
+    @logger.debug("common_weekday_output_reached")
+    number_of_weekdays = pattern.size
+    pattern.each do |key, weekday|
+      @logger.debug "weekday: #{weekday.to_i}"
+      case weekday.to_i
+      when 7
+        qualifier = "%As"
+      when 14
+        qualifier = "Every other %A"
       else
-        default_output
+        # 1st & 3rd Tuesday
+        
+        nth_days = @timeframes.map { |n| nth_dayname_of_month(n.start) }
+        groups = (@timeframes.size / pattern.size)
+        if groups > 2
+          default_output
+        else
+          qualifier = "#{nth_days[0]} and #{nth_days[(groups*1)+1]} %A"
+        end
       end
+      output << @timeframes[counter].start.strftime("#{qualifier} %I:%M%P") << "-" << @timeframes[counter].stop.strftime("%I:%M%P")
+      counter += 1
     end
-    pattern.size
+    output
   end
   
   def default_output

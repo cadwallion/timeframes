@@ -40,7 +40,7 @@ describe TimeframeSeries do
     t.timeframes.should == (timeframes << new_timeframe)
   end
   
-  it "outputs sequential days as as range" do
+  it "outputs sequential days as a range" do
     timeframes = [
       Timeframe.new("2011-02-14 04:00", "2011-02-14 05:00"),
       Timeframe.new("2011-02-15 04:00", "2011-02-15 05:00"),
@@ -49,5 +49,26 @@ describe TimeframeSeries do
     series = TimeframeSeries.new(timeframes)
     
     series.series_in_words.should == "02/14-02/16 4:00am-5:00am"
+  end
+  
+  it "outputs days with a common day of the week" do
+    timeframes = [
+      Timeframe.new("2011-02-14 04:00", "2011-02-14 05:00"),
+      Timeframe.new("2011-02-21 04:00", "2011-02-21 05:00"),
+      Timeframe.new("2011-02-28 04:00", "2011-02-28 05:00")
+    ]
+    series = TimeframeSeries.new(timeframes)
+    
+    series.series_in_words.should == "Mondays 04:00am-05:00am"
+  end
+  
+  it "outputs days for every other weekday" do
+    timeframes = [
+      Timeframe.new("2011-02-14 04:00", "2011-02-14 05:00"),
+      Timeframe.new("2011-02-28 04:00", "2011-02-28 05:00")
+    ]
+    
+    series = TimeframeSeries.new(timeframes)
+    series.series_in_words.should == "Every other Monday 04:00am-05:00am"
   end
 end
