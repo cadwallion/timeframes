@@ -47,8 +47,21 @@ module Timeframes
       end
     end
   
-    def duration
-      @stop.to_i - @start.to_i
+    def duration(format = :seconds)
+      unformatted_duration = @stop.to_i - @start.to_i
+      case format
+      when :seconds
+        duration_divisor = 1
+      when :minutes
+        duration_divisor =  60.0
+      when :hours
+        duration_divisor = 3600.0
+      when :days
+        duration_divisor = 86400.0
+      else
+        return "unknown format type."
+      end
+      return unformatted_duration / duration_divisor
     end
   end
 end
