@@ -14,16 +14,16 @@ Usage of the Timeframe object:
 
 		start = DateTime.new(2011, 2, 14, 4, 0)
 		stop  = DateTime.new(2011, 2, 14, 5, 0)
-		timeframe = Timeframe.new(start, stop)
+		timeframe = Timeframes::Frame.new(start, stop)
 		timeframe.duration(:seconds) # => 60
 		timeframe.time # => 4:00am-5:00am
 		
 Usage of the TimeframeSeries object to explain the timeframe in words:
 
-		timeframe1 = Timeframe.new(DateTime.new(2011, 02, 14, 4, 0), DateTime.new(2011, 02, 14, 5, 0))
-		timeframe2 = Timeframe.new(DateTime.new(2011, 02, 21, 4, 0), DateTime.new(2011, 02, 21, 5, 0))		
-		timeframe3 = Timeframe.new(DateTime.new(2011, 02, 28, 4, 0), DateTime.new(2011, 02, 28, 5, 0))
-		series = TimeframeSeries.new([timeframe1, timeframe2, timeframe3])
+		timeframe1 = Timeframes::Frame.new(DateTime.new(2011, 02, 14, 4, 0), DateTime.new(2011, 02, 14, 5, 0))
+		timeframe2 = Timeframes::Frame.new(DateTime.new(2011, 02, 21, 4, 0), DateTime.new(2011, 02, 21, 5, 0))		
+		timeframe3 = Timeframes::Frame.new(DateTime.new(2011, 02, 28, 4, 0), DateTime.new(2011, 02, 28, 5, 0))
+		series = Timeframes::Series.new([timeframe1, timeframe2, timeframe3])
 		series.series_in_words # => Every Monday, 4:00am-5:00am
 		
 TODO
