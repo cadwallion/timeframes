@@ -13,8 +13,8 @@ Gem::Specification.new do |s|
   s.description = %q{Manage start-stop timeframes and a series of timeframes for pattern matching and iterating.}
 
 
-  s.add_dependency = "activesupport"
-  s.add_development_dependency = "rspec"
+  s.add_dependency("activesupport", "~> 3.0.0")
+  s.add_development_dependency("rspec")
   
   s.rubyforge_project = "timeframes"
 
